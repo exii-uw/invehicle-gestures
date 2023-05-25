@@ -1,0 +1,61 @@
+---
+title: "SDLP"
+author: "Arman Hafizi"
+date: "2022-09-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# SDLP
+
+```{r}
+par = 'SDLP'
+hist(allData[[par]])
+
+library(plyr)
+library(dplyr)
+ddply(allData, ~ Method, function(data) summary(allData[[par]]))
+ddply(allData, ~ Method, summarise, SDLP.mean=mean(SDLP), SDLP.sd=sd(SDLP))
+
+plot(SDLP ~ Method, data=allData)
+```
+
+```{r}
+shapiro.test(allData[allData$Method == "TAP",][[par]])
+shapiro.test(allData[allData$Method == "SWIPE",][[par]])
+shapiro.test(allData[allData$Method == "MIDAIR",][[par]])
+shapiro.test(allData[[par]])
+```
+
+```{r}
+qqnorm(allData[[par]], pch = 1, frame = FALSE)
+qqline(allData[[par]], col = "steelblue")
+```
+
+```{r}
+logPar = paste('log', par, sep='')
+allData[[logPar]] = log(allData[[par]])
+plot(logSDLP ~ Method, data=allData)
+```
+
+```{r}
+shapiro.test(allData[allData$Method == "TAP",][[logPar]])
+shapiro.test(allData[allData$Method == "SWIPE",][[logPar]])
+shapiro.test(allData[allData$Method == "MIDAIR",][[logPar]])
+shapiro.test(allData[[logPar]])
+```
+
+```{r}
+qqnorm(allData[[logPar]], pch = 1, frame = FALSE)
+qqline(allData[[logPar]], col = "steelblue")
+```
+
+```{r}
+m = aov(logSDLP ~ Method, data=allData) # fit model
+anova(m) # report anova
+library(multcomp)
+summary(glht(m, mcp(Method="Tukey")), test=adjusted(type="holm")) # Tukey means compare all pairs
+```

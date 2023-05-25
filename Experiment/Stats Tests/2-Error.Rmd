@@ -1,0 +1,63 @@
+---
+title: "Error"
+author: "Arman Hafizi"
+date: "2022-09-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Error
+
+```{r}
+par = 'Error'
+allData[[par]] = allData[[par]] + 1
+hist(allData[[par]])
+
+library(plyr)
+library(dplyr)
+ddply(allData, ~ Method, function(data) summary(allData[[par]]))
+ddply(allData, ~ Method, summarise, Error.mean=mean(Error), Error.sd=sd(Error))
+
+plot(Error ~ Method, data=allData)
+```
+
+
+```{r}
+shapiro.test(allData[allData$Method == "TAP",][[par]])
+shapiro.test(allData[allData$Method == "SWIPE",][[par]])
+shapiro.test(allData[allData$Method == "MIDAIR",][[par]])
+shapiro.test(allData[[par]])
+```
+
+```{r}
+qqnorm(allData[[par]], pch = 1, frame = FALSE)
+qqline(allData[[par]], col = "steelblue")
+```
+
+```{r}
+logPar = paste('log', par, sep='')
+allData[[logPar]] = log(allData[[par]])
+plot(logError ~ Method, data=allData)
+hist(allData[[logPar]])
+```
+
+```{r}
+shapiro.test(allData[allData$Method == "TAP",][[logPar]])
+shapiro.test(allData[allData$Method == "SWIPE",][[logPar]])
+shapiro.test(allData[allData$Method == "MIDAIR",][[logPar]])
+shapiro.test(allData[[logPar]])
+```
+
+```{r}
+qqnorm(allData[[logPar]], pch = 1, frame = FALSE)
+qqline(allData[[logPar]], col = "steelblue")
+```
+
+```{r}
+par = 'Error'
+friedman.test(y = newData[[par]], groups = newData$Method, blocks = newData$PID)
+pairwise.wilcox.test(newData[[par]], newData$Method, p.adj = 'bonf')
+```

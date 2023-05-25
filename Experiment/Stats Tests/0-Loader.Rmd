@@ -1,0 +1,20 @@
+---
+title: "Loader"
+author: "Arman Hafizi"
+date: "2022-09-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read Data
+```{r cars}
+allData = read.csv("../data2.csv")
+#View(allData)
+allData$PID = factor(allData$PID)
+allData$Method = factor(allData$Method)
+allData$Block = factor(allData$Block)
+summary(allData)
+```

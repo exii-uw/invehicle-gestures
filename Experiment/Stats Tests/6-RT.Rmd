@@ -1,0 +1,87 @@
+---
+title: "Response Time"
+author: "Arman Hafizi"
+date: "2022-09-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Time
+### Plot Raw Data
+```{r pressure, echo=FALSE}
+hist(allData$Response.Time)
+
+library(plyr)
+library(dplyr)
+ddply(allData, ~ Method, function(data) summary(allData$Response.Time))
+ddply(allData, ~ Method, summarise, Response.Time=mean(Response.Time), Response.Time=sd(Response.Time))
+
+plot(Response.Time ~ Method, data=allData)
+```
+
+### Check the normality <0.05 not normally distributed 
+
+```{r}
+shapiro.test(allData[allData$Method == "TAP",]$Response.Time)
+shapiro.test(allData[allData$Method == "SWIPE",]$Response.Time)
+shapiro.test(allData[allData$Method == "MIDAIR",]$Response.Time)
+shapiro.test(allData$Response.Time)
+```
+
+### qqplot 
+
+```{r}
+qqnorm(allData$Response.Time, pch = 1, frame = FALSE)
+qqline(allData$Response.Time, col = "steelblue")
+```
+
+### residuals
+
+```{r}
+m = aov(Response.Time ~ Method, data=allData) # fit model
+shapiro.test(residuals(m)) # test residuals
+qqnorm(residuals(m)); qqline(residuals(m)) # q-q plot residuals
+```
+
+### log-transform and check the normality 
+
+```{r}
+allData$logRTime = log(allData$Response.Time)
+plot(logRTime ~ Method, data=allData)
+hist(allData$logRTime)
+```
+
+```{r}
+shapiro.test(allData[allData$Method == "TAP",]$logRTime)
+shapiro.test(allData[allData$Method == "SWIPE",]$logRTime)
+shapiro.test(allData[allData$Method == "MIDAIR",]$logRTime)
+shapiro.test(allData$logRTime)
+```
+
+### qqplot 
+
+```{r}
+qqnorm(allData$logRTime, pch = 1, frame = FALSE)
+qqline(allData$logRTime, col = "steelblue")
+```
+
+### one-way ANOVA, suitable now to logTime
+
+```{r}
+m = aov(logRTime ~ Method, data=allData) # fit model
+anova(m) # report anova
+library(multcomp)
+summary(glht(m, mcp(Method="Tukey")), test=adjusted(type="holm")) # Tukey means compare all pairs
+```
+
+### Friedman Test
+
+```{r}
+par = 'logRTime'
+friedman.test(y = newData[[par]], groups = newData$Method, blocks = newData$PID)
+pairwise.wilcox.test(newData[[par]], newData$Method, p.adj = 'bonf')
+```
+

@@ -1,0 +1,102 @@
+---
+title: "Analysis"
+author: "Arman Hafizi"
+date: "2022-09-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Time
+### Plot Raw Data
+```{r pressure, echo=FALSE}
+hist(allData$Selection.Time)
+hist(allData$Response.Time)
+hist(allData$Completion.Time)
+
+library(plyr)
+library(dplyr)
+ddply(allData, ~ Method, function(data) summary(allData$Selection.Time))
+ddply(allData, ~ Method, summarise, Selection.Time.mean=mean(Selection.Time), Selection.Time.sd=sd(Selection.Time))
+
+plot(Selection.Time ~ Method, data=allData)
+```
+
+### Check the normality <0.05 not normally distributed 
+
+```{r}
+shapiro.test(allData[allData$Method == "TAP",]$Selection.Time)
+shapiro.test(allData[allData$Method == "SWIPE",]$Selection.Time)
+shapiro.test(allData[allData$Method == "MIDAIR",]$Selection.Time)
+shapiro.test(allData$Selection.Time)
+```
+
+### qqplot 
+
+```{r}
+qqnorm(allData$Selection.Time, pch = 1, frame = FALSE)
+qqline(allData$Selection.Time, col = "steelblue")
+```
+
+### residuals
+
+```{r}
+m = aov(Selection.Time ~ Method, data=allData) # fit model
+shapiro.test(residuals(m)) # test residuals
+qqnorm(residuals(m)); qqline(residuals(m)) # q-q plot residuals
+```
+
+### log-transform and check the normality 
+
+```{r}
+allData$logTime = log(allData$Selection.Time)
+plot(logTime ~ Method, data=allData)
+hist(allData$logTime)
+```
+
+```{r}
+shapiro.test(allData[allData$Method == "TAP",]$logTime)
+shapiro.test(allData[allData$Method == "SWIPE",]$logTime)
+shapiro.test(allData[allData$Method == "MIDAIR",]$logTime)
+shapiro.test(allData$logTime)
+```
+
+### qqplot 
+
+```{r}
+qqnorm(allData$logTime, pch = 1, frame = FALSE)
+qqline(allData$logTime, col = "steelblue")
+```
+
+### one-way ANOVA, suitable now to logTime
+
+```{r}
+m = aov(logTime ~ Method, data=allData) # fit model
+anova(m) # report anova
+library(multcomp)
+summary(glht(m, mcp(Method="Tukey")), test=adjusted(type="holm")) # Tukey means compare all pairs
+```
+
+### Friedman Test
+
+```{r}
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+newData = data.frame(allData)
+row_odd <- seq_len(nrow(allData)) %% 2
+newData1 = allData[allData$Block == 1,]
+newData2 = allData[allData$Block == 2,]
+newData2['PID'] <- as.numeric(unlist(newData2['PID'])) + 18
+newData2$PID = factor(newData2$PID)
+newData = rbind(newData1, newData2)
+```
+
+```{r}
+par = 'logTime'
+friedman.test(y = newData[[par]], groups = newData$Method, blocks = newData$PID)
+pairwise.wilcox.test(newData[[par]], newData$Method, p.adj = 'bonf')
+```
+

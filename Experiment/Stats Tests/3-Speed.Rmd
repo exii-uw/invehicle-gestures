@@ -1,0 +1,61 @@
+---
+title: "Speed"
+author: "Arman Hafizi"
+date: "2022-09-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Speed
+
+```{r}
+par = 'Speed'
+hist(allData[[par]])
+
+library(plyr)
+library(dplyr)
+ddply(allData, ~ Method, function(data) summary(allData[[par]]))
+ddply(allData, ~ Method, summarise, Speed.mean=mean(Speed), Speed.sd=sd(Speed))
+
+plot(Speed ~ Method, data=allData)
+```
+
+
+```{r}
+shapiro.test(allData[allData$Method == "TAP",][[par]])
+shapiro.test(allData[allData$Method == "SWIPE",][[par]])
+shapiro.test(allData[allData$Method == "MIDAIR",][[par]])
+shapiro.test(allData[[par]])
+```
+
+```{r}
+qqnorm(allData[[par]], pch = 1, frame = FALSE)
+qqline(allData[[par]], col = "steelblue")
+```
+
+```{r}
+logPar = paste('log', par, sep='') # 2 logs!!!
+allData[[logPar]] = log(allData[[par]])
+plot(logSpeed ~ Method, data=allData)
+```
+
+```{r}
+shapiro.test(allData[allData$Method == "TAP",][[logPar]])
+shapiro.test(allData[allData$Method == "SWIPE",][[logPar]])
+shapiro.test(allData[allData$Method == "MIDAIR",][[logPar]])
+shapiro.test(allData[[logPar]])
+```
+
+```{r}
+qqnorm(allData[[logPar]], pch = 1, frame = FALSE)
+qqline(allData[[logPar]], col = "steelblue")
+```
+
+```{r}
+par = 'Speed'
+friedman.test(y = newData[[par]], groups = newData$Method, blocks = newData$PID)
+pairwise.wilcox.test(newData[[par]], newData$Method, p.adj = 'bonf')
+```

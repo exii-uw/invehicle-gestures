@@ -1,0 +1,93 @@
+---
+title: "Completion Time"
+author: "Arman Hafizi"
+date: "2022-09-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Time
+### Plot Raw Data
+```{r pressure, echo=FALSE}
+hist(allData$Completion.Time)
+
+library(plyr)
+library(dplyr)
+ddply(allData, ~ Method, function(data) summary(allData$Completion.Time))
+ddply(allData, ~ Method, summarise, Completion.Time=mean(Completion.Time), Completion.Time=sd(Completion.Time))
+
+plot(Completion.Time ~ Method, data=allData)
+
+```
+
+```{r}
+library(psych)
+describe(allData[allData$Method == "MIDAIR",]$Selection.Time)
+```
+
+
+### Check the normality <0.05 not normally distributed 
+
+```{r}
+#shapiro.test(allData[allData$Method == "TAP",]$Completion.Time)
+shapiro.test(allData[allData$Method == "SWIPE",]$Completion.Time)
+shapiro.test(allData[allData$Method == "MIDAIR",]$Completion.Time)
+shapiro.test(allData[allData$Method != "TAP",]$Completion.Time)
+```
+
+### qqplot 
+
+```{r}
+qqnorm(allData[allData$Method != "TAP",]$Completion.Time, pch = 1, frame = FALSE)
+qqline(allData[allData$Method != "TAP",]$Completion.Time, col = "steelblue")
+```
+
+### residuals
+
+```{r}
+m = aov(Completion.Time ~ Method, data=allData[allData$Method != "TAP",]) # fit model
+shapiro.test(residuals(m)) # test residuals
+qqnorm(residuals(m)); qqline(residuals(m)) # q-q plot residuals
+```
+
+### log-transform and check the normality 
+
+```{r}
+allData$logCTime = log(allData$Completion.Time)
+plot(logCTime ~ Method, data=allData[allData$Method != "TAP",])
+hist(allData$logCTime)
+```
+
+```{r}
+shapiro.test(allData[allData$Method == "SWIPE",]$logCTime)
+shapiro.test(allData[allData$Method == "MIDAIR",]$logCTime)
+shapiro.test(allData[allData$Method != "TAP",]$logCTime)
+```
+
+### qqplot 
+
+```{r}
+qqnorm(allData[allData$Method != "TAP",]$logCTime, pch = 1, frame = FALSE)
+qqline(allData[allData$Method != "TAP",]$logCTime, col = "steelblue")
+```
+
+### one-way ANOVA, suitable now to logTime
+
+```{r}
+m = aov(logCTime ~ Method, data=allData[allData$Method != "TAP",]) # fit model
+anova(m) # report anova
+library(multcomp)
+summary(glht(m, mcp(Method="Tukey")), test=adjusted(type="holm")) # Tukey means compare all pairs
+```
+
+### Friedman Test
+
+```{r}
+par = 'logCTime'
+friedman.test(y = newData[[par]], groups = newData$Method, blocks = newData$PID)
+pairwise.wilcox.test(newData[[par]], newData$Method, p.adj = 'bonf')
+```
+
